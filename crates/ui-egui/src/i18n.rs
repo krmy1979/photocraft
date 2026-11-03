@@ -201,7 +201,7 @@ fn expand(packed: &str, keys: &[&str]) -> Result<String, String> {
 }
 
 /// The registry. English first: it is the fallback and the source language.
-pub static LANGUAGES: [LangInfo; 27] = [
+pub static LANGUAGES: [LangInfo; 28] = [
     LangInfo { code: "en", name: "English", source: b"", plural: plural_one_other, complete_menus: false, catalog: OnceLock::new() },
     LangInfo { code: "ja", name: "日本語", source: catalog!("ja"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
     LangInfo { code: "zh-hans", name: "简体中文", source: catalog!("zh-hans"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
@@ -239,6 +239,9 @@ pub static LANGUAGES: [LangInfo; 27] = [
     // Arabic (Modern Standard); `ar-SA`, `ar-EG` and the other regional locales resolve here. The
     // chrome mirrors right to left (`dir_for_code`), and egui lays each label out right to left.
     LangInfo { code: "ar", name: "العربية", source: catalog!("ar"), plural: plural_arabic, complete_menus: true, catalog: OnceLock::new() },
+    // Hebrew (Modern Israeli); `he-IL` and the legacy `iw` tag resolve here. Like Arabic, the chrome
+    // mirrors right to left (`dir_for_code`). One/other: counts read "שכבה 1", "3 שכבות".
+    LangInfo { code: "he", name: "עברית", source: catalog!("he"), plural: plural_one_other, complete_menus: true, catalog: OnceLock::new() },
     // Swedish; `sv-SE` and `sv-FI` locales resolve here.
     LangInfo { code: "sv", name: "Svenska", source: catalog!("sv"), plural: plural_one_other, complete_menus: true, catalog: OnceLock::new() },
     // Finnish; `fi-FI` resolves here (Swedish in Finland, `sv-FI`, stays Swedish). One/other: the
@@ -377,6 +380,11 @@ fn candidates(tag: &str) -> Vec<String> {
     if primary == "pt" && !out.iter().any(|c| c == "pt-br") {
         // The only Portuguese catalog is Brazilian; other regions use it rather than English.
         out.insert(out.len() - 1, "pt-br".to_string());
+    }
+    if primary == "iw" {
+        // `iw` is the legacy ISO 639 code for Hebrew, still reported by some systems (Java, older
+        // Android); it reads the `he` catalog.
+        out.insert(out.len() - 1, "he".to_string());
     }
     if matches!(primary, "no" | "nn") && !out.iter().any(|c| c == "nb") {
         // The only Norwegian catalog is Bokmål; the macrolanguage code and Nynorsk use it rather

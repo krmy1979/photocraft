@@ -1,0 +1,65 @@
+name: Hebrew Windows build
+
+# Builds PhotoCraft for Windows (x64) with the Hebrew interface catalog and publishes the .exe
+# files as a GitHub release, so they can be downloaded without signing in.
+on:
+  push:
+    branches: [hebrew]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hebrew-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    env:
+      CARGO_INCREMENTAL: "0"
+      # The same pinned font set the official releases embed.
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out craft-fonts
+        uses: actions/checkout@v4
+        with:
+          repository: storytold/craft-fonts
+          ref: b076417b5880bd4154bd22f00695b1d28c6bea83
+          path: craft-fonts
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Test the translation catalogs
+        run: cargo test --locked -p photocraft-ui-egui --lib i18n
+
+      - name: Build
+        run: cargo build --release --locked -p photocraft -p photocraft-cli
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item target/release/photocraft.exe, target/release/photocraft-cli.exe dist/
+          Compress-Archive -Path dist/* -DestinationPath PhotoCraft-Hebrew-windows-x64.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PhotoCraft-Hebrew-windows-x64
+          path: PhotoCraft-Hebrew-windows-x64.zip
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="hebrew-${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" PhotoCraft-Hebrew-windows-x64.zip \
+            --target "$GITHUB_SHA" --title "PhotoCraft בעברית (build ${GITHUB_RUN_NUMBER})" \
+            --notes "גרסת Windows של PhotoCraft עם ממשק בעברית. בחירת השפה: Preferences → Interface → Language → עברית."

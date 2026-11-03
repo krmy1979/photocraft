@@ -267,6 +267,17 @@ fn arabic_resolves_locales_and_preferences() {
 }
 
 #[test]
+fn hebrew_resolves_locales_and_preferences() {
+    let he = Lang::from_code("he").expect("he registered");
+    assert_eq!(he.name(), "עברית");
+    for tag in ["he", "HE", "he-IL", "he_IL", "he_IL.UTF-8", "iw", "iw_IL"] {
+        assert_eq!(lang_from_tag(tag), Some(he), "{tag}");
+        assert_eq!(Lang::from_pref(tag), he, "{tag}");
+    }
+    assert_eq!(dir_for_code("he"), Dir::Rtl);
+}
+
+#[test]
 fn arabic_plural_rule_has_six_forms() {
     let ar = Lang::from_code("ar").expect("ar registered");
     let counts = [0, 1, 2, 3, 10, 11, 99, 100, 101, 102, 103, 111, 199, 1000, u64::MAX];
